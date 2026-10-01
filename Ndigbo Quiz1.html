@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ndigbo Quiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#8E1414; --bg2:#6A0D0D; --card:#FFFDF7; --ink:#1E1512; --muted:#6B5A4E;
+  --gold:#F2B632; --ok:#1F7A4D; --bad:#B3261E; --line:rgba(255,255,255,.14);
+  --opt:#FFF4DC; --optb:#EBD9B4;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#170D0B; --bg2:#0C0605; --card:#241A16; --ink:#F7EFE6; --muted:#BBAA9C;
+    --ok:#3FB87A; --bad:#E0564B; --line:rgba(242,182,50,.16); --opt:#30241F; --optb:#46362F;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#170D0B; --bg2:#0C0605; --card:#241A16; --ink:#F7EFE6; --muted:#BBAA9C;
+  --ok:#3FB87A; --bad:#E0564B; --line:rgba(242,182,50,.16); --opt:#30241F; --optb:#46362F;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0;min-height:100%;font-family:"Nunito",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  color:var(--ink);background-color:var(--bg);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120' fill='none' stroke='%23F2B632' stroke-opacity='.13' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M30 30c0-6 8-6 8 0s-12 9-14 0 10-16 20-8'/%3E%3Cpath d='M90 90c0-6 8-6 8 0s-12 9-14 0 10-16 20-8'/%3E%3Cpath d='M60 10v14M53 17h14'/%3E%3Cpath d='M0 60q15-12 30 0t30 0'/%3E%3Cpath d='M60 60q15 12 30 0t30 0'/%3E%3Ccircle cx='100' cy='25' r='3'/%3E%3Ccircle cx='20' cy='95' r='3'/%3E%3C/svg%3E");
+}
+button{font:inherit;cursor:pointer;border:0}
+button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.wrap{max-width:760px;margin:0 auto;padding:16px 14px 28px}
+.screen{display:none}.screen.on{display:block}
+
+/* Home */
+.hero{color:#fff;text-align:center;padding:26px 6px 18px}
+.hero h1{font-family:"Baloo 2",system-ui,sans-serif;font-weight:800;font-size:clamp(2.6rem,11vw,4.4rem);line-height:.95;margin:0;color:var(--gold);letter-spacing:-.01em}
+.hero h1 small{display:block;font-size:.42em;color:#fff;font-weight:600;margin-top:6px}
+.hero p{margin:12px auto 0;max-width:34ch;opacity:.9;font-size:1.02rem}
+.panel{background:var(--card);border-radius:22px;padding:18px;margin-top:14px}
+.panel h2{font-family:"Baloo 2",system-ui,sans-serif;font-size:1.2rem;margin:0 0 10px}
+.levels{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.lvl{background:var(--opt);border:2px solid var(--optb);color:var(--ink);border-radius:16px;padding:14px 12px;text-align:left}
+.lvl b{display:block;font-family:"Baloo 2",system-ui,sans-serif;font-size:1.25rem;line-height:1.1}
+.lvl span{font-size:.9rem;color:var(--muted)}
+.lvl[aria-pressed="true"]{border-color:var(--bg);background:var(--gold);color:#1E1512}
+.lvl[aria-pressed="true"] span{color:#4A3A20}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.chip{background:var(--opt);border:2px solid var(--optb);color:var(--ink);border-radius:999px;padding:10px 16px;font-weight:700}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.hint{color:var(--muted);font-size:.92rem;margin:8px 0 0}
+.go{display:block;width:100%;margin-top:16px;background:var(--gold);color:#1E1512;font-family:"Baloo 2",system-ui,sans-serif;font-weight:800;font-size:1.5rem;border-radius:18px;padding:14px}
+.go:active{transform:translateY(1px)}
+
+/* Quiz */
+.top{display:flex;align-items:center;justify-content:space-between;color:#fff;gap:10px;padding:4px 2px 10px}
+.top .pill{background:rgba(0,0,0,.25);border-radius:999px;padding:6px 12px;font-weight:800;font-size:.95rem;white-space:nowrap}
+.top .home{background:transparent;color:#fff;font-weight:800;padding:6px 4px;text-decoration:underline;text-underline-offset:3px}
+.stage{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;color:#fff;margin:4px 0 14px}
+.ring{position:relative;width:110px;height:110px}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .track{stroke:rgba(255,255,255,.18)}
+.ring .bar{stroke:var(--gold);transition:stroke .2s}
+.ring.low .bar{stroke:#FF6B5B}
+.ring .num{position:absolute;inset:0;display:grid;place-items:center;font-family:"Baloo 2",system-ui,sans-serif;font-weight:800;font-size:2.6rem;line-height:1}
+.ring.low .num{animation:pulse .5s ease-in-out infinite alternate}
+@keyframes pulse{to{transform:scale(1.12)}}
+.q{font-family:"Baloo 2",system-ui,sans-serif;font-weight:800;font-size:clamp(1.35rem,4.8vw,2rem);line-height:1.15;margin:0}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opt{background:var(--card);color:var(--ink);border-radius:18px;padding:16px 14px;text-align:left;font-weight:800;font-size:clamp(1rem,3.8vw,1.25rem);line-height:1.2;display:flex;gap:10px;align-items:flex-start;min-height:74px;border:3px solid transparent}
+.opt .k{flex:none;width:30px;height:30px;border-radius:50%;background:var(--gold);color:#1E1512;display:grid;place-items:center;font-size:1rem}
+.opt.ok{background:var(--ok);color:#fff}
+.opt.ok .k{background:#fff;color:var(--ok)}
+.opt.bad{background:var(--bad);color:#fff}
+.opt.bad .k{background:#fff;color:var(--bad)}
+.opt.dim{opacity:.45}
+.opt:disabled{cursor:default}
+.note{min-height:3.2em;color:#fff;background:rgba(0,0,0,.22);border-radius:14px;padding:12px 14px;margin-top:12px;font-size:1rem;line-height:1.4;visibility:hidden}
+.note.on{visibility:visible}
+.note b{color:var(--gold)}
+.ctrl{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-top:12px}
+.ctrl button{background:rgba(0,0,0,.28);color:#fff;border-radius:14px;padding:12px 6px;font-weight:800;font-size:.95rem}
+.ctrl .next{background:var(--gold);color:#1E1512}
+.modebar{display:flex;justify-content:center;gap:8px;margin-top:12px;flex-wrap:wrap}
+.modebar button{background:transparent;color:#fff;border:2px solid rgba(255,255,255,.35);border-radius:999px;padding:8px 14px;font-weight:700;font-size:.9rem}
+.modebar button[aria-pressed="true"]{background:#fff;color:#1E1512;border-color:#fff}
+
+/* End */
+.end{text-align:center}
+.big{font-family:"Baloo 2",system-ui,sans-serif;font-weight:800;font-size:4.5rem;line-height:1;color:var(--bg);margin:6px 0}
+:root[data-theme="dark"] .big{color:var(--gold)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .big{color:var(--gold)}}
+.end p{color:var(--muted);margin:6px 0 0}
+
+@media (max-width:480px){
+  .stage{grid-template-columns:1fr;justify-items:center;text-align:center}
+  .ring{width:92px;height:92px}
+  .opts{grid-template-columns:1fr}
+  .opt{min-height:0}
+}
+@media (prefers-reduced-motion: reduce){.ring.low .num{animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HOME -->
+  <section id="home" class="screen on">
+    <header class="hero">
+      <h1>Ndigbo Quiz<small>Mara ebe i si bịa</small></h1>
+      <p>Know where you come from. A quiz on Igbo language, culture, history and philosophy for young Ndigbo in Germany, ages 5 to 20.</p>
+    </header>
+
+    <div class="panel">
+      <h2>Choose a level</h2>
+      <div class="levels" id="levels">
+        <button class="lvl" data-l="kids" aria-pressed="true"><b>Ụmụaka</b><span>Ages 5 to 9</span></button>
+        <button class="lvl" data-l="juniors" aria-pressed="false"><b>Juniors</b><span>Ages 10 to 14</span></button>
+        <button class="lvl" data-l="seniors" aria-pressed="false"><b>Seniors</b><span>Ages 15 to 20</span></button>
+        <button class="lvl" data-l="mix" aria-pressed="false"><b>Mix all</b><span>Every level together</span></button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>How questions move</h2>
+      <div class="row" id="modes">
+        <button class="chip" data-m="auto" aria-pressed="true">Automatic</button>
+        <button class="chip" data-m="manual" aria-pressed="false">Manual</button>
+      </div>
+      <p class="hint" id="modeHint">Each question gets 15 seconds, shows the answer, then moves on by itself.</p>
+      <h2 style="margin-top:16px">Questions per round</h2>
+      <div class="row" id="counts">
+        <button class="chip" data-c="10" aria-pressed="true">10</button>
+        <button class="chip" data-c="15" aria-pressed="false">15</button>
+        <button class="chip" data-c="20" aria-pressed="false">20</button>
+        <button class="chip" data-c="all" aria-pressed="false">All</button>
+      </div>
+      <button class="go" id="start">Start the quiz</button>
+    </div>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="quiz" class="screen" aria-live="polite">
+    <div class="top">
+      <button class="home" id="toHome">Menu</button>
+      <span class="pill" id="prog">1 / 10</span>
+      <span class="pill" id="score">Score 0</span>
+    </div>
+    <div class="stage">
+      <div class="ring" id="ring">
+        <svg viewBox="0 0 100 100"><circle class="track" cx="50" cy="50" r="44" fill="none" stroke-width="9"/><circle class="bar" id="bar" cx="50" cy="50" r="44" fill="none" stroke-width="9" stroke-linecap="round"/></svg>
+        <div class="num" id="num">15</div>
+      </div>
+      <h2 class="q" id="qtext"></h2>
+    </div>
+    <div class="opts" id="opts"></div>
+    <div class="note" id="note"></div>
+    <div class="ctrl">
+      <button id="prev">Back</button>
+      <button id="pause">Pause</button>
+      <button id="reveal">Answer</button>
+      <button id="next" class="next">Next</button>
+    </div>
+    <div class="modebar">
+      <button id="mAuto" aria-pressed="true">Automatic</button>
+      <button id="mManual" aria-pressed="false">Manual</button>
+      <button id="sound" aria-pressed="true">Sound on</button>
+    </div>
+  </section>
+
+  <!-- END -->
+  <section id="end" class="screen">
+    <div class="panel end">
+      <h2 style="font-size:1.6rem">Ọ dị mma! Well done!</h2>
+      <div class="big" id="final">0</div>
+      <p id="finalText"></p>
+      <button class="go" id="again">Play another round</button>
+      <button class="go" id="menu" style="background:var(--opt);border:2px solid var(--optb);color:var(--ink)">Back to menu</button>
+    </div>
+  </section>
+</div>
+
+<script>
+/* ---------- QUESTION BANK ----------
+   q = question, o = options (first one is ALWAYS the correct answer; options get shuffled on screen), n = short fact shown after */
+const BANK = {
+kids: [
+ {q:"What language do Igbo people speak?",o:["Igbo","Hausa","Yoruba","German"],n:"Igbo is spoken by tens of millions of people in Nigeria and around the world."},
+ {q:"How do you say “Good morning” in Igbo?",o:["Ụtụtụ ọma","Ka chi fọọ","Ehihie ọma","Mgbede ọma"],n:"Ka chi fọọ means good night, ehihie ọma good afternoon, mgbede ọma good evening."},
+ {q:"What does “Daalụ” mean?",o:["Thank you","Good night","Sorry","Goodbye"],n:"Daalụ means thank you. To say sorry, we say “Ndo”."},
+ {q:"What is the Igbo word for water?",o:["Mmiri","Nri","Ụlọ","Nkịta"],n:"Mmiri is water. Mmiri na-ezo means it is raining."},
+ {q:"What does “Nne” mean?",o:["Mother","Father","Sister","Teacher"],n:"Nne is mother. Nne ochie is grandmother."},
+ {q:"What does “Nna” mean?",o:["Father","Friend","Uncle","King"],n:"Nna is father. Nna ochie is grandfather."},
+ {q:"What does “Nnọọ” mean?",o:["Welcome","Goodbye","Run","Eat"],n:"We say Nnọọ to welcome visitors."},
+ {q:"What does “Kedụ?” mean?",o:["How are you?","What is your name?","Where are you going?","How old are you?"],n:"Kedụ? means how are you. You can answer: Ọ dị mma, it is fine."},
+ {q:"What is the Igbo word for food?",o:["Nri","Mmiri","Akwụkwọ","Ụgbọala"],n:"Nri is food. Akwụkwọ is book and ụgbọala is car."},
+ {q:"Which food do Igbo people celebrate at the New Yam Festival?",o:["Yam","Rice","Beans","Plantain"],n:"Yam is called ji. The festival is Iri Ji, which means eating the new yam."},
+ {q:"What do Igbo elders break and bless to welcome guests?",o:["Kola nut (ọjị)","Chocolate","Bread","Ice cream"],n:"Breaking ọjị (kola nut) is a very important Igbo welcome."},
+ {q:"In which country is most of Igboland?",o:["Nigeria","Ghana","Germany","Kenya"],n:"Igboland is in south-eastern Nigeria."},
+ {q:"What is the Igbo word for “one”?",o:["Otu","Abụọ","Atọ","Anọ"],n:"Otu, abụọ, atọ, anọ: one, two, three, four!"},
+ {q:"What number is “atọ”?",o:["Three","One","Five","Ten"],n:"Atọ is three. Ise is five and iri is ten."},
+ {q:"What is the Igbo word for masquerade?",o:["Mmanwụ","Ụlọ","Nwa","Isi"],n:"Mmanwụ are masquerades that dance at festivals."},
+ {q:"What does “Nwa” mean?",o:["Child","Dog","Tree","Book"],n:"Nwa means child. Ụmụaka means children."},
+ {q:"What does “Ụlọ” mean?",o:["House","Car","Market","Shoe"],n:"Ụlọ is house. Ụlọ akwụkwọ is school, a house of books!"},
+ {q:"Which animal is “nkịta”?",o:["Dog","Cat","Goat","Chicken"],n:"Nkịta is dog. Ewu is goat and ọkụkọ is chicken."},
+ {q:"Which animal is “ewu”?",o:["Goat","Cow","Fish","Bird"],n:"Ewu is goat. Azụ is fish and nnụnụ is bird."},
+ {q:"How many days are in the Igbo market week?",o:["Four","Seven","Five","Ten"],n:"The Igbo week has four market days: Eke, Orie, Afọ and Nkwọ."},
+ {q:"Which one is an Igbo market day?",o:["Nkwọ","Monday","Friday","Sunday"],n:"Eke, Orie, Afọ and Nkwọ are the four Igbo market days."},
+ {q:"What does “Chineke” mean?",o:["God the Creator","The sun","A river","A king"],n:"Chineke means God who creates."},
+ {q:"Which of these is a popular Igbo soup?",o:["Ofe onugbu (bitterleaf soup)","Pizza","Sushi","Hamburger"],n:"Ofe onugbu, ofe oha and ofe nsala are loved Igbo soups."},
+ {q:"What does “Isi” mean?",o:["Head","Hand","Leg","Eye"],n:"Isi is head, aka is hand, ụkwụ is leg and anya is eye."},
+ {q:"What does “Ịhụnanya” mean?",o:["Love","Anger","Fear","Sleep"],n:"Ịhụnanya means love."}
+],
+juniors: [
+ {q:"The Igbo market days are Eke, Orie, Afọ and ___?",o:["Nkwọ","Ahịa","Ụka","Izu"],n:"Ahịa means market, ụka means church and izu means week."},
+ {q:"Which of these is NOT one of the five South-East states?",o:["Ogun","Anambra","Imo","Ebonyi"],n:"The five South-East states are Abia, Anambra, Ebonyi, Enugu and Imo."},
+ {q:"What is the capital of Anambra State?",o:["Awka","Onitsha","Nnewi","Enugu"],n:"Awka is the capital. Onitsha is Anambra's big trading city."},
+ {q:"What is the capital of Imo State?",o:["Owerri","Orlu","Okigwe","Aba"],n:"Owerri is the capital of Imo State."},
+ {q:"What is the capital of Abia State?",o:["Umuahia","Aba","Ohafia","Arochukwu"],n:"Umuahia is the capital. Aba is Abia's famous commercial city."},
+ {q:"What is the capital of Ebonyi State?",o:["Abakaliki","Afikpo","Nsukka","Awka"],n:"Abakaliki is the capital of Ebonyi State."},
+ {q:"Who wrote the famous novel “Things Fall Apart”?",o:["Chinua Achebe","Wole Soyinka","Chimamanda Ngozi Adichie","Cyprian Ekwensi"],n:"Chinua Achebe published Things Fall Apart in 1958."},
+ {q:"Who is the main character in “Things Fall Apart”?",o:["Okonkwo","Obi","Ezeulu","Nwoye"],n:"Okonkwo is the main character. Nwoye is his son."},
+ {q:"In traditional Igbo belief, who is the earth goddess?",o:["Ala (Ani)","Amadioha","Anyanwụ","Idemili"],n:"Ala, also called Ani, is the earth goddess of morality and fertility."},
+ {q:"Amadioha is traditionally linked with what?",o:["Thunder and justice","The sea","Marriage","Trading"],n:"Amadioha is the Igbo deity of thunder and justice."},
+ {q:"What is “Igba nkwụ”?",o:["The traditional wedding (wine carrying)","A funeral","A wrestling match","A naming ceremony"],n:"At Igba nkwụ, the bride finds her groom in the crowd and gives him palm wine."},
+ {q:"What is the “ogene”?",o:["A metal gong","A clay pot drum","A wooden flute","A string instrument"],n:"The ogene is a metal gong that gives Igbo music its bright ring."},
+ {q:"What is the “udu”?",o:["A clay pot drum","A metal gong","A wooden flute","A rattle"],n:"The udu is a clay pot played by striking and covering its holes."},
+ {q:"What is the “ọja”?",o:["A wooden flute","A drum","A gong","A rattle"],n:"The ọja is a wooden flute, often played with dancers and masquerades."},
+ {q:"What is “uli”?",o:["Traditional body and wall painting","A kind of soup","A dance step","A chieftaincy title"],n:"Uli are graceful line designs painted on skin and walls, mostly by women."},
+ {q:"Igbo-Ukwu in Anambra State is famous for what?",o:["Ancient bronze artworks","Oil wells","A football stadium","An airport"],n:"The Igbo-Ukwu bronzes are over 1,000 years old and amaze the world."},
+ {q:"Which major river flows past Onitsha?",o:["River Niger","River Benue","Imo River","Cross River"],n:"Onitsha sits on the east bank of the River Niger."},
+ {q:"What does the saying “Igbo enwe eze” mean?",o:["The Igbo have no (single) king","The Igbo love kings","The Igbo are all kings","The king has no people"],n:"It describes how Igbo communities traditionally ruled themselves through elders and assemblies."},
+ {q:"Who are the “Ụmụnna”?",o:["Kinsmen from the same male line","Market women","Masquerades","Palm wine tappers"],n:"Ụmụnna are the extended family who share a common male ancestor."},
+ {q:"Who are the “Ụmụada”?",o:["Daughters of a family or lineage","Young boys","Priests","Traders"],n:"Ụmụada, the daughters of the family, are powerful peacemakers and advisers."},
+ {q:"Who was Nigeria's first President, an Igbo man?",o:["Nnamdi Azikiwe","Obafemi Awolowo","Ahmadu Bello","Tafawa Balewa"],n:"Dr Nnamdi Azikiwe, called Zik, became President in 1963."},
+ {q:"What number is “iri”?",o:["Ten","Two","Hundred","Six"],n:"Iri is ten. Narị is one hundred."},
+ {q:"What does “Omenala” mean?",o:["Igbo custom and tradition","A kind of yam","A festival dance","A village square"],n:"Omenala (or Omenani) means the customs of the land."},
+ {q:"What does “Nwanne” mean?",o:["Sibling (brother or sister)","Stranger","Teacher","Chief"],n:"Nwanne literally means child of the same mother."},
+ {q:"What does the name “Nkem” mean?",o:["My own","My food","My house","My market"],n:"Nkem means my own or mine, a very loving name."}
+],
+seniors: [
+ {q:"In which years was the Nigerian Civil War (Biafran War) fought?",o:["1967 to 1970","1960 to 1963","1970 to 1975","1966 to 1967"],n:"The war lasted from July 1967 to January 1970."},
+ {q:"Who led the Republic of Biafra?",o:["Chukwuemeka Odumegwu Ojukwu","Nnamdi Azikiwe","Yakubu Gowon","Alex Ekwueme"],n:"Lt Col Chukwuemeka Odumegwu Ojukwu declared Biafra in May 1967."},
+ {q:"In which year did the Aba Women's War take place?",o:["1929","1914","1945","1960"],n:"Igbo and Ibibio women rose against colonial warrant chiefs and taxation in 1929."},
+ {q:"Which Chimamanda Ngozi Adichie novel is set during the Biafran War?",o:["Half of a Yellow Sun","Purple Hibiscus","Americanah","Arrow of God"],n:"Half of a Yellow Sun (2006) is named after the half sun on the Biafran flag."},
+ {q:"What title did the spiritual ruler of the ancient Nri kingdom hold?",o:["Eze Nri","Obi","Oba","Emir"],n:"The Eze Nri was a priest-king whose authority was spiritual, not military."},
+ {q:"Which famous oracle was based at Arochukwu?",o:["Ibini Ukpabi","Olumo","Ọsun","Ikenga"],n:"Ibini Ukpabi, the Long Juju, made the Aro people very influential in trade."},
+ {q:"In Igbo philosophy, what is a person's “chi”?",o:["Their personal spirit and destiny","A market day","A type of cloth","A family title"],n:"A proverb says: when a person says yes, their chi says yes too."},
+ {q:"What does “Onye aghana nwanne ya” mean?",o:["Do not abandon your kin","Work hard every day","Respect your elders","Wealth comes home"],n:"It is a call for Igbo people everywhere to look out for one another."},
+ {q:"What does “Egbe bere, ugo bere” teach?",o:["Live and let live","Work hard","Respect elders","Save money"],n:"Let the kite perch and let the eagle perch. Whoever denies the other, may its wing break."},
+ {q:"What does “Akụ rụọ ụlọ” mean?",o:["Let wealth reach home","Wealth is useless","Home is far","Work abroad forever"],n:"It encourages Ndigbo abroad to invest back in their homeland."},
+ {q:"Igbo is described as what kind of language?",o:["Tonal","Non-tonal","Only written","Extinct"],n:"Tone changes meaning. Akwa can mean cloth, egg, cry or bridge depending on tone."},
+ {q:"To which language family does Igbo belong?",o:["Niger-Congo","Afro-Asiatic","Indo-European","Nilo-Saharan"],n:"Igbo is part of the large Niger-Congo family, like Yoruba and Swahili."},
+ {q:"Who was Olaudah Equiano?",o:["An Igbo-born writer who fought slavery","A pre-colonial king","A Biafran general","A highlife musician"],n:"His 1789 autobiography helped the campaign to end the British slave trade."},
+ {q:"In which US state is Igbo Landing, site of the 1803 resistance by enslaved Igbo?",o:["Georgia","Texas","New York","California"],n:"On St Simons Island, captive Igbo chose to walk into the water rather than be enslaved."},
+ {q:"What is considered the first full novel written in the Igbo language?",o:["Omenuko by Pita Nwana","Things Fall Apart","Jagua Nana","Arrow of God"],n:"Omenuko was published in 1933."},
+ {q:"What does the Ikenga represent?",o:["A person's strength and achievement","Rain","Death","Marriage"],n:"The horned Ikenga figure is linked with the right hand, the hand of action."},
+ {q:"What is the “Ọfọ”?",o:["A staff of truth and authority held by elders","A dance","Palm wine","Old money"],n:"The ọfọ stands for justice. It is held by family heads when they speak for the lineage."},
+ {q:"Mbari houses were built to honour whom?",o:["Ala, the earth goddess","Colonial officers","Traders","Warriors"],n:"Mbari houses, full of sculpture, are especially linked with the Owerri area."},
+ {q:"Ahiajọkụ is the Igbo deity of what?",o:["Yam and crops","The river","War","The moon"],n:"The Ahiajọkụ Lecture in Imo State honours Igbo scholarship and culture."},
+ {q:"How many market weeks (izu) traditionally make an Igbo month?",o:["Seven","Four","Ten","Twelve"],n:"Seven weeks of four days makes 28 days, and 13 such months make a year."},
+ {q:"Roughly how old are the Igbo-Ukwu bronzes?",o:["About 9th to 10th century AD","18th century","Made in the 1950s","5th century BC"],n:"They were first found in 1938 and later excavated by archaeologist Thurstan Shaw."},
+ {q:"Which Igbo educationist appears on the ₦10 note?",o:["Alvan Ikoku","Obafemi Awolowo","Ahmadu Bello","Tafawa Balewa"],n:"Alvan Ikoku was a pioneering teacher and founder of schools."},
+ {q:"Which Chinua Achebe book, published in 2012, is his memoir of Biafra?",o:["There Was a Country","No Longer at Ease","Anthills of the Savannah","A Man of the People"],n:"It was Achebe's last book before he died in 2013."},
+ {q:"What does “Onye wetara ọjị, wetara ndụ” mean?",o:["Whoever brings kola brings life","Whoever eats kola is rich","Kola is for kings only","Never share kola"],n:"It is said when kola is presented, as a blessing on the one who brought it."},
+ {q:"Which Igbo city is home to the famous Ariaria International Market?",o:["Aba","Awka","Owerri","Umuahia"],n:"Aba is known for its manufacturing and the saying “Made in Aba”."}
+]};
+BANK.kids.forEach(x=>x.lv="kids");BANK.juniors.forEach(x=>x.lv="juniors");BANK.seniors.forEach(x=>x.lv="seniors");
+
+/* ---------- STATE ---------- */
+const SECS=15, AUTO_GAP=3500;
+let level="kids", mode="auto", count="10", sound=true;
+let list=[], idx=0, score=0, results=[];
+let remaining=SECS, running=false, lastTs=0, raf=0, advanceT=0, lastBeep=99;
+const $=id=>document.getElementById(id);
+const CIRC=2*Math.PI*44;
+$("bar").style.strokeDasharray=CIRC;
+
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function pickGroup(el,attr,cb){el.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;el.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));cb(b.dataset[attr])})}
+pickGroup($("levels"),"l",v=>level=v);
+pickGroup($("counts"),"c",v=>count=v);
+pickGroup($("modes"),"m",v=>{setMode(v)});
+
+function setMode(v){
+  mode=v;
+  $("modeHint").textContent = v==="auto"
+   ? "Each question gets 15 seconds, shows the answer, then moves on by itself."
+   : "The 15-second timer still runs, but the quizmaster taps Next to move on.";
+  document.querySelectorAll("#modes button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===v));
+  $("mAuto").setAttribute("aria-pressed",v==="auto");
+  $("mManual").setAttribute("aria-pressed",v==="manual");
+  clearTimeout(advanceT);
+  if(v==="auto" && results[idx] && results[idx].done) advanceT=setTimeout(next,AUTO_GAP);
+}
+$("mAuto").onclick=()=>setMode("auto");
+$("mManual").onclick=()=>setMode("manual");
+$("sound").onclick=()=>{sound=!sound;$("sound").setAttribute("aria-pressed",sound);$("sound").textContent=sound?"Sound on":"Sound off"};
+
+function show(id){document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("on",s.id===id));window.scrollTo(0,0)}
+
+/* ---------- SOUND ---------- */
+let ac=null;
+function beep(freq,dur,vol){ if(!sound)return; try{
+  ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+  const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=freq;o.type="sine";
+  g.gain.setValueAtTime(vol||.15,ac.currentTime);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+dur);
+  o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+dur);
+ }catch(e){} }
+
+/* ---------- QUIZ FLOW ---------- */
+function start(){
+  let pool = level==="mix" ? [...BANK.kids,...BANK.juniors,...BANK.seniors] : BANK[level];
+  pool=shuffle(pool);
+  if(count!=="all") pool=pool.slice(0,Math.min(+count,pool.length));
+  list=pool.map(item=>({...item,opts:shuffle(item.o)}));
+  idx=0;score=0;results=list.map(()=>({done:false,pick:null}));
+  show("quiz");render();
+}
+function render(){
+  clearTimeout(advanceT);cancelAnimationFrame(raf);
+  const it=list[idx], r=results[idx];
+  $("prog").textContent=`${idx+1} / ${list.length}`;
+  $("score").textContent=`Score ${score}`;
+  $("qtext").textContent=it.q;
+  const wrap=$("opts");wrap.innerHTML="";
+  it.opts.forEach((t,i)=>{
+    const b=document.createElement("button");b.className="opt";
+    b.innerHTML=`<span class="k">${"ABCD"[i]}</span><span></span>`;b.lastChild.textContent=t;
+    b.onclick=()=>answer(t);wrap.appendChild(b);
+  });
+  $("prev").disabled=idx===0;$("prev").style.opacity=idx===0?.4:1;
+  $("next").textContent= idx===list.length-1 ? "Finish" : "Next";
+  if(r.done){ paint(); setTime(0); running=false; $("pause").textContent="Pause"; }
+  else { $("note").classList.remove("on"); remaining=SECS; lastBeep=99; setTime(SECS); running=true; $("pause").textContent="Pause"; lastTs=performance.now(); raf=requestAnimationFrame(tick); }
+}
+function setTime(t){
+  const s=Math.ceil(t);$("num").textContent=s;
+  $("bar").style.strokeDashoffset=CIRC*(1-t/SECS);
+  $("ring").classList.toggle("low",t>0&&t<=5);
+}
+function tick(ts){
+  if(!running)return;
+  remaining-= (ts-lastTs)/1000; lastTs=ts;
+  if(remaining<=0){ remaining=0; setTime(0); beep(330,.5,.2); answer(null); return; }
+  const s=Math.ceil(remaining);
+  if(s<=3 && s<lastBeep){ lastBeep=s; beep(880,.12); }
+  setTime(remaining); raf=requestAnimationFrame(tick);
+}
+function answer(t){
+  const r=results[idx]; if(r.done)return;
+  running=false;cancelAnimationFrame(raf);
+  r.done=true;r.pick=t;
+  const it=list[idx];
+  if(t===it.o[0]){score++;beep(660,.15);setTimeout(()=>beep(990,.2),120);}
+  else if(t!==null){beep(200,.35,.18);}
+  paint();
+  if(mode==="auto") advanceT=setTimeout(next,AUTO_GAP);
+}
+function paint(){
+  const it=list[idx],r=results[idx],correct=it.o[0];
+  $("score").textContent=`Score ${score}`;
+  [...$("opts").children].forEach(b=>{
+    const t=b.lastChild.textContent;b.disabled=true;
+    if(t===correct)b.classList.add("ok");
+    else if(t===r.pick)b.classList.add("bad");
+    else b.classList.add("dim");
+  });
+  const head = r.pick===null ? "Time up! " : (r.pick===correct ? "Correct! " : "Not quite. ");
+  $("note").innerHTML=`<b></b><span></span>`;
+  $("note").firstChild.textContent=head+"Answer: "+correct+". ";
+  $("note").lastChild.textContent=it.n;
+  $("note").classList.add("on");
+}
+function next(){
+  clearTimeout(advanceT);
+  if(!results[idx].done){ running=false; cancelAnimationFrame(raf); results[idx].done=true; results[idx].pick=null; }
+  if(idx<list.length-1){idx++;render();} else finish();
+}
+function prev(){ if(idx>0){idx--;render();} }
+function finish(){
+  running=false;cancelAnimationFrame(raf);clearTimeout(advanceT);
+  $("final").textContent=`${score} / ${list.length}`;
+  const pct=score/list.length;
+  $("finalText").textContent = pct>=.8 ? "Ị ma ihe! You really know your roots."
+    : pct>=.5 ? "Good work. Keep learning and try again."
+    : "Every question is a lesson. Ask your parents and elders, then play again.";
+  show("end");
+}
+$("start").onclick=start;
+$("next").onclick=next;
+$("prev").onclick=prev;
+$("reveal").onclick=()=>answer(null);
+$("pause").onclick=()=>{
+  if(results[idx].done)return;
+  running=!running;$("pause").textContent=running?"Pause":"Resume";
+  if(running){lastTs=performance.now();raf=requestAnimationFrame(tick);} else cancelAnimationFrame(raf);
+};
+$("toHome").onclick=()=>{running=false;cancelAnimationFrame(raf);clearTimeout(advanceT);show("home")};
+$("again").onclick=start;
+$("menu").onclick=()=>show("home");
+
+/* Keyboard for laptops: 1-4 pick, → next, ← back, space pause */
+document.addEventListener("keydown",e=>{
+  if(!$("quiz").classList.contains("on"))return;
+  if(["1","2","3","4"].includes(e.key)){const b=$("opts").children[+e.key-1];if(b&&!b.disabled)b.click();}
+  else if(e.key==="ArrowRight")next();
+  else if(e.key==="ArrowLeft")prev();
+  else if(e.key===" "){e.preventDefault();$("pause").click();}
+});
+</script>
+</body>
+</html>
